@@ -4,12 +4,31 @@ require "erb"
 
 Sunlight::Congress.api_key = "e179a6973728c4dd3fb1204283aaccb5"
 
+def clean_phone(numbers)
+	less_than_10 = numbers.length < 10
+	greater_than_11 = numbers.length > 11
+	first_num_not_1  = numbers[0] != "1"
+	first_num_is_1 = numbers[0] == "1"
+	equals_11 = numbers.length == 11
+
+	if less_than_10 || greater_than_11 || (equals_11 && first_num_not_1)
+		""
+	elsif equals_11 && first_num_is_1
+		numbers[0] == ""
+	end
+	return numbers
+end
+
+def only_numbers(phone)
+	phone.scan(/\d+/).join
+end
+
 def clean_zipcode(zipcode)
 	zipcode.to_s.rjust(5, "0")[0..4]
 end
 
 def legislators_by_zipcode(zipcode)
-	legislators = Sunlight::Congress::Legislator.by_zipcode(zipcode)
+	Sunlight::Congress::Legislator.by_zipcode(zipcode)
 end
 
 def save_thank_you_letters(id, form_letter)
@@ -29,12 +48,18 @@ contents = CSV.open "event_attendees.csv", headers: true, header_converters: :sy
 contents.each do |row|
 	id = row[0]
 	name = row[:first_name]
-	zipcode = clean_zipcode(row[:zipcode])
-	legislators = legislators_by_zipcode(zipcode)
+	phone = clean_phone(only_numbers(row[:homephone]))
+	puts "#{phone}"
 
-	personal_letter = template_letter.gsub("FIRST_NAME", name)
-	personal_letter.gsub!("LEGISLATORS", legislators)
-	form_letter = erb_template.result(binding)
+	
 
-	save_thank_you_letters(id, form_letter)
+
+
+
+	#zipcode = clean_zipcode(row[:zipcode])
+	#legislators = legislators_by_zipcode(zipcode)
+
+	#form_letter = erb_template.result(binding)
+
+	#save_thank_you_letters(id, form_letter)
 end
